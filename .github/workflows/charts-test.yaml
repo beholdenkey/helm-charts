@@ -1,0 +1,162 @@
+name: "Charts: Test"
+
+on:
+  workflow_call:
+    inputs:
+      checkoutCommit:
+        required: true
+        type: string
+      chartsToTest:
+        description: >
+          A JSON encoded array of charts to lint
+        type: string
+        required: true
+      overrideDeps:
+        description: >
+          A JSON encoded array of dependencies to override before testing
+        type: string
+        required: false
+        default: "[]"
+
+env:
+  HELM_VERSION: 3.11.2
+
+jobs:
+  install-chart:
+    name: Install chart
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.chartsToTest != '[]' && inputs.chartsToTest != '' }}
+    strategy:
+      matrix:
+        chart: ${{ fromJSON(inputs.chartsToTest) }}
+        k8s_version:
+          [
+            "v1.23.17",
+            "v1.24.17",
+            "v1.25.16",
+            "v1.26.13",
+            "v1.27.10",
+            "v1.28.6",
+            "v1.29.1",
+          ]
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.checkoutCommit }}
+
+      - name: Install Kubernetes tools
+        uses: yokawasa/action-setup-kube-tools@v0.11.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+          helm: "${{ env.HELM_VERSION }}"
+          kubectl: "${{ matrix.k8s_version }}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Create k3d cluster
+        uses: nolar/setup-k3d-k3s@v1
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: Remove node taints
+        run: |
+          kubectl taint --all=true nodes node.cloudprovider.kubernetes.io/uninitialized- || true
+
+      - name: Override chart dependencies
+        uses: ./.github/actions/override-chart-deps
+        if: ${{ inputs.overrideDeps != '[]' }}
+        with:
+          chart: ${{ matrix.chart }}
+          overrides: ${{ inputs.overrideDeps }}
+
+      - name: Run chart-testing (install)
+        working-directory: "charts/${{ matrix.chart }}"
+        # TODO: Awaiting https://github.com/actions/checkout/issues/1607
+        run: |
+          ct install --config "$GITHUB_WORKSPACE/.ci/ct/ct.yaml" --charts .
+
+  install_success:
+    needs:
+      - install-chart
+    if: |
+      always()
+    name: Install successful
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix status
+        if: >-
+          ${{
+              (
+                inputs.chartsToTest != '' && inputs.chartsToTest != '[]'
+              ) &&
+              (
+                contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+              )
+          }}
+        run: exit 1
+
+  unittest-chart:
+    name: Unit-test chart
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.chartsToTest != '[]' && inputs.chartsToTest != '' }}
+    strategy:
+      matrix:
+        chart: ${{ fromJSON(inputs.chartsToTest) }}
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.checkoutCommit }}
+
+      - name: Install Kubernetes tools
+        uses: yokawasa/action-setup-kube-tools@v0.11.1
+        with:
+          setup-tools: |
+            helmv3
+          helm: "${{ env.HELM_VERSION }}"
+
+      - name: Override chart dependencies
+        uses: ./.github/actions/override-chart-deps
+        if: ${{ inputs.overrideDeps != '[]' }}
+        with:
+          chart: ${{ matrix.chart }}
+          overrides: ${{ inputs.overrideDeps }}
+
+      - name: Run tests
+        working-directory: "charts/${{ matrix.chart }}"
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git
+          helm dep update
+          helm unittest -f "tests/**/*_test.yaml" .
+
+  unittest_success:
+    needs:
+      - unittest-chart
+    if: |
+      always()
+    name: Unittest successful
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix status
+        if: >-
+          ${{
+              (
+                inputs.chartsToTest != '' && inputs.chartsToTest != '[]'
+              ) &&
+              (
+                contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+              )
+          }}
+        run: exit 1
