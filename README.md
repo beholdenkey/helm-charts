@@ -1,13 +1,13 @@
 # Home Media Helm Charts
 
-A collection of Helm Charts for deploying home media applications and services.
+A collection of Helm Charts.
 
 ## Usage
 
-Add the Home Media Helm Charts repository to Helm:
+Add the Helm Charts repository to Helm:
 
 ```bash
-helm repo add beholdenkey https://beholdenkey.github.io/charts.media/
+helm repo add beholdenkey https://beholdenkey.github.io/helm-charts/
 ```
 
 To install a chart, use the following command:

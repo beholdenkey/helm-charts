@@ -1,7 +1,0 @@
-brew "jq"
-brew "yq"
-brew "pre-commit"
-brew "kind"
-brew "helm"
-brew "kubernetes-cli"
-brew "kubectx"
