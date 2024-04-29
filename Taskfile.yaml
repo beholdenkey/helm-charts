@@ -1,0 +1,12 @@
+---
+version: "3"
+
+includes:
+  workstation: .taskfiles/Workstations/Taskfile.yaml
+  pre-commit: .taskfiles/PreCommit/Taskfile.yaml
+
+tasks:
+  default:
+    desc: Show help
+    cmds:
+      - task --list

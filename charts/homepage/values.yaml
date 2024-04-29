@@ -1,0 +1,87 @@
+# Image configuration
+image:
+  repository: ghcr.io/benphelps/homepage
+  # tag: v0.6.0  # Uncomment this line to set a specific image tag
+
+# RBAC Configuration
+enableRbac: false  # Set to true to enable RBAC
+annotations: {}
+# Service Account Configuration
+serviceAccount:
+  name: homepage  # The name of the service account to create/use
+  create: false  # Set to true to create a new service account
+
+# Service configuration
+service:
+  type: ClusterIP  # Default service type
+  port: 3000  # Service port
+
+# Deployment Strategy
+controller:
+  strategy: RollingUpdate
+  rollingUpdate:
+    maxSurge: "25%"
+    maxUnavailable: "25%"
+
+# Ingress configuration
+ingress:
+  enabled: false
+  annotations: {}
+  labels: {}
+  hosts:
+    - host: "homepage.local"
+      paths:
+        - path: "/"
+          pathType: Prefix
+  tls: []
+
+# ConfigMap configurations
+config:
+  useExistingConfigMap: ""  # Uncomment and set to use an existing ConfigMap
+  bookmarks: |
+    Developer:
+      - Github:
+          abbr: GH
+          href: "https://github.com/"
+  services: |
+    My First Group:
+      - My First Service:
+          href: "http://localhost/"
+          description: "Homepage is awesome"
+    My Second Group:
+      - My Second Service:
+          href: "http://localhost/"
+          description: "Homepage is the best"
+    My Third Group:
+      - My Third Service:
+          href: "http://localhost/"
+          description: "Homepage is 😎"
+  widgets: |
+    resources:
+      backend: resources
+      expanded: true
+      cpu: true
+      memory: true
+    search:
+      provider: duckduckgo
+      target: "_blank"
+
+# Kubernetes specific configuration
+kubernetes:
+  mode: disable  # Set to 'enable' to activate Kubernetes integration
+
+# Persistent volume configuration
+persistence:
+  logs:
+    enabled: true
+    type: emptyDir
+    mountPath: "/app/config/logs"
+
+# Resource requests and limits (uncomment to apply)
+# resources:
+#   requests:
+#     memory: "10Mi"
+#     cpu: "10m"
+#   limits:
+#     memory: "200Mi"
+#     cpu: "500m"

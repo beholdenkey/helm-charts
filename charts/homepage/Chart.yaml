@@ -1,0 +1,19 @@
+---
+apiVersion: v2
+name: homepage
+description: |
+  A helm chart for Homepage a modern, fully static, fast, secure fully proxied, highly customizable application dashboard
+icon: https://github.com/benphelps/homepage/blob/de584eae8f12a0d257e554e9511ef19bd2a1232c/public/mstile-150x150.png
+type: application
+version: 1.0.0
+appVersion: v0.8.12
+sources:
+  - https://github.com/benphelps/homepage/
+maintainers:
+  - name: Justin Bailey
+    email: justthered63@gmail.com
+annotations:
+  helm.github.io/license: MIT
+  helm.github.io/images: |
+    - name: gethomepage/homepage
+      image: ghcr.io/gethomepage/homepage:v0.8.12

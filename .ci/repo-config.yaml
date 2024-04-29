@@ -1,0 +1,11 @@
+---
+excluded-charts-lint:
+  - library/common-test
+
+excluded-charts-install:
+  - apps/k8s-ycl
+  - library/common
+  - other/app-template
+
+excluded-charts-release:
+  - library/common-test

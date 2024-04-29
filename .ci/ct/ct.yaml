@@ -1,0 +1,15 @@
+chart-yaml-schema: .ci/ct/chart_schema.yaml
+lint-conf: .yamllint.yml
+
+remote: origin
+target-branch: main
+
+helm-extra-args: --timeout 600s
+
+chart-dirs:
+  - charts/library
+  - charts/apps
+  - charts/other
+
+chart-repos:
+  - bjw-s=https://bjw-s.github.io/helm-charts
